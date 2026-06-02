@@ -38,8 +38,24 @@ The integration uses **OAuth 2.1 3LO (Authorization Code + PKCE)** via **Dynamic
 * **Toolset scoping:** append `?toolsets=core,llmobs,...` to the endpoint (default: `core`).
 * **Permissions:** the Datadog user needs `mcp_read` (and `mcp_write` for write tools) plus the relevant resource permissions.
 
-> Simpler alternative for a single shared identity: send `DD_API_KEY` + `DD_APPLICATION_KEY` as HTTP headers to the MCP endpoint and skip DCR/Cognito/3LO. The trade-off is no per-user RBAC or attribution.
+## Tutorials
 
-## Tutorial
+Two variants, differing only in the **outbound** auth to Datadog:
 
-- [Integrate Datadog Remote MCP Server into AgentCore Gateway](01-datadog-mcp-server-target.ipynb)
+- **[01 — OAuth 2.1 3LO](01-datadog-mcp-server-target.ipynb)** *(per-user)* — Dynamic Client Registration + a per-user browser Authorize step. Each call runs under the authorized user's Datadog RBAC, Data Access Controls, and audit identity. Best for multi-user agent platforms.
+- **[02 — API key](02-datadog-mcp-server-target-apikey.ipynb)** *(shared identity)* — `DD_API_KEY` + `DD_APPLICATION_KEY` headers; no DCR, no browser Authorize. Simpler to run; all calls share one identity (no per-user attribution). Best for demos and internal automation. Available to any Datadog customer.
+
+Both keep Cognito JWT inbound auth and register the Datadog MCP server as the gateway target.
+
+### Which to use
+
+| | OAuth 3LO (01) | API key (02) |
+|---|---|---|
+| Setup | DCR + browser Authorize | Paste two keys |
+| Identity | Per-user | Single shared |
+| Datadog RBAC / audit | Per-user | Coarse (one identity) |
+| Best for | Multi-user platforms | Demos, internal automation |
+
+### Two-header note (API-key variant)
+
+Datadog needs two headers but a gateway target allows one credential provider. Notebook 02 injects `DD_API_KEY` via an API-key credential provider and forwards `DD_APPLICATION_KEY` from the client via header propagation (`metadataConfiguration.allowedRequestHeaders`).
